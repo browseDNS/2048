@@ -13,7 +13,55 @@ function KeyboardInputManager() {
   }
 
   this.listen();
+  this.setupGamepad();
 }
+
+KeyboardInputManager.prototype.setupGamepad = function () {
+  var self = this;
+  this.lastGamepadState = { up: false, down: false, left: false, right: false };
+  
+  // Start polling for gamepad input
+  this.pollGamepad();
+};
+
+KeyboardInputManager.prototype.pollGamepad = function () {
+  var self = this;
+  
+  // Check for connected gamepads
+  var gamepads = navigator.getGamepads();
+  if (gamepads && gamepads[0]) {
+    var gamepad = gamepads[0];
+    
+    // Check d-pad buttons (buttons 12-15 are standard d-pad)
+    var currentState = {
+      up: gamepad.buttons[12] && gamepad.buttons[12].pressed,
+      down: gamepad.buttons[13] && gamepad.buttons[13].pressed,
+      left: gamepad.buttons[14] && gamepad.buttons[14].pressed,
+      right: gamepad.buttons[15] && gamepad.buttons[15].pressed
+    };
+    
+    // Emit move events for newly pressed buttons (not held)
+    if (currentState.up && !this.lastGamepadState.up) {
+      self.emit("move", 0); // Up
+    }
+    if (currentState.right && !this.lastGamepadState.right) {
+      self.emit("move", 1); // Right
+    }
+    if (currentState.down && !this.lastGamepadState.down) {
+      self.emit("move", 2); // Down
+    }
+    if (currentState.left && !this.lastGamepadState.left) {
+      self.emit("move", 3); // Left
+    }
+    
+    this.lastGamepadState = currentState;
+  }
+  
+  // Continue polling
+  requestAnimationFrame(function() {
+    self.pollGamepad();
+  });
+};
 
 KeyboardInputManager.prototype.on = function (event, callback) {
   if (!this.events[event]) {
